@@ -10,6 +10,16 @@ def convert_date(timestamp):
     formated_date = d.strftime('%Y%m%d')
     return formated_date
 
+def git_push(path_to_repo, commit_msg):
+    try:
+        repo = Repo(path_to_repo)
+        repo.git.add(update=True)
+        repo.index.commit(commit_msg)
+        origin = repo.remote(name='origin')
+        origin.push()
+    except:
+        print('Some error occured while pushing the code')    
+
 if __name__ == '__main__':
     curPath = os.getcwd() 
     head1, tail1 = os.path.split(curPath)
@@ -35,10 +45,12 @@ if __name__ == '__main__':
                     newPath = f"{curPath}\\Blockly\\{Path(entry).name}"
                     os.rename(entry, newPath)
                     count = count + 1
-                    print("Moved to Blockly directory")
-    #                 repo.index.add([newPath])
+                    print(f"Moved {Path(entry).name} to Blockly directory")
+                    repo.index.add([newPath])
     if count > 0:
         cmt = input(f"Enter commit message for git: ")
-        #repo.index.commit(cmt)
+        git_push(curPath,cmt)
+        repo.index.commit(cmt)
+        repo.index.update()
     else:
         print(f"no files moved into git repo")
