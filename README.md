@@ -43,3 +43,6 @@ https://pypi.org/project/PySide6/
 https://www.learnpyqt.com/tutorials/creating-your-first-window/
 https://code.qt.io/cgit/qt/qtbase.git/tree/examples/widgets/tutorials/widgets/toplevel/main.cpp?h=5.15
 https://realpython.com/python-pyqt-gui-calculator/
+
+IMU Programming
+https://stemrobotics.cs.pdx.edu/node/7265
