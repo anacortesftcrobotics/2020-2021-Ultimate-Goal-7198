@@ -31,7 +31,7 @@ import java.util.Locale;
  *
  * @see <a href="http://www.adafruit.com/products/2472">Adafruit IMU</a>
  */
-@Autonomous(name = "Sensor: BNO055 IMU", group = "Sensor")
+@Autonomous(name = "ExSensorIMU", group = "Sensor")
 
 public class AutoChassis extends LinearOpMode
     {
