@@ -63,6 +63,8 @@ public class Auto7198IMU extends LinearOpMode
     // State
     //----------------------------------------------------------------------------------------------
 
+    MecanumChassis robot   = new MecanumChassis();   // Use team robot hardware
+    
     // The IMU sensor object
     BNO055IMU imu;
 
@@ -81,6 +83,12 @@ public class Auto7198IMU extends LinearOpMode
     //----------------------------------------------------------------------------------------------
 
     @Override public void runOpMode() {
+        
+        /*
+         * Initialize the standard drive system variables.
+         * The init() method of the hardware class does most of the work here
+         */
+        robot.init(hardwareMap);
 
         // Set up the parameters with which we will use our IMU. Note that integration
         // algorithm here just reports accelerations to the logcat log; it doesn't actually
@@ -127,23 +135,26 @@ public class Auto7198IMU extends LinearOpMode
             telemetry.update();
             sleep(3000);
 
+            // code tests robot can turn on around for 3 sec
             resetAngle();
+            /*
+            robot.setSimplePower(0.25, -0.25);
             telemetry.update();
             sleep(3000);
-
-            rotate(90, 0);
-            getAngle();
+            robot.setSimplePower(0, 0);
             telemetry.update();
-            sleep(3000);
-
-            resetAngle();
-            sleep(3000);
-            telemetry.update();
-
-            getAngle();
-            sleep(3000);
-            telemetry.update();
+            */
             
+            // code tests robot can turn 90 deg before stopping
+            rotate(90, 0.25);
+            getAngle();
+            telemetry.update();
+            sleep(3000);
+
+            rotate(-90, 0.25);
+            getAngle();
+            telemetry.update();
+            sleep(3000);
         }
     }
 
@@ -193,7 +204,7 @@ public class Auto7198IMU extends LinearOpMode
 
     private void rotate(int degrees, double power)
     {
-        //double  leftPower, rightPower;
+        double  leftPower, rightPower;
 
         // restart imu movement tracking.
         resetAngle();
@@ -201,45 +212,50 @@ public class Auto7198IMU extends LinearOpMode
         // getAngle() returns + when rotating counter clockwise (left) and - when rotating
         // clockwise (right).
 
-        // if (degrees < 0)
-        // {   // turn right.
-        //     leftPower = power;
-        //     rightPower = -power;
-        // }
-        // else if (degrees > 0)
-        // {   // turn left.
-        //     leftPower = -power;
-        //     rightPower = power;
-        // }
-        // else return;
+        if (degrees < 0)
+        {   // turn counter clockwise.
+            leftPower = power;
+            rightPower = -power;
+        }
+        else if (degrees > 0)
+        {   // turn clockwise.
+            leftPower = -power;
+            rightPower = power;
+        }
+        else return;
 
         // set power to rotate.
         // leftMotor.setPower(leftPower);
         // rightMotor.setPower(rightPower);
 
+        robot.setSimplePower(leftPower, rightPower);
         rotate_status = true;
         // rotate until turn is completed.
         if (degrees < 0)
         {
-            // On right turn we have to get off zero first.
-            while (opModeIsActive() && getAngle() == 0) { telemetry.update(); }
-
+            // On counter clockwise turn we have to get off zero first.
+            //while (opModeIsActive() && getAngle() == 0) { telemetry.update(); }
             while (opModeIsActive() && getAngle() > degrees) { telemetry.update(); }
         }
-        else    // left turn.
+        else 
+        {   // clockwise turn.
             while (opModeIsActive() && getAngle() < degrees) { telemetry.update(); }
-
+        }
+        
+        rotate_status = false;
+        
         // turn the motors off.
         // rightMotor.setPower(0);
         // leftMotor.setPower(0);
-         telemetry.update(); 
+        robot.setSimplePower(0.0, 0.0);
+
+        telemetry.update(); 
         // wait for rotation to stop.
         sleep(1000);
-         telemetry.update(); 
+        telemetry.update(); 
         // reset angle tracking on new heading.
         resetAngle();
         
-        rotate_status = false;
         telemetry.update(); 
     }
 
@@ -323,6 +339,13 @@ public class Auto7198IMU extends LinearOpMode
                     return String.format(Locale.getDefault(), "%b", rotate_status);
                     }
                 });
+        telemetry.addLine()
+            .addData("robot", new Func<String>() {
+                @Override public String value() {
+                    return robot.toString();
+                    }
+                });
+
     }
 
     //----------------------------------------------------------------------------------------------
