@@ -1,7 +1,7 @@
 # git_downloaded_file.py
 import os, shutil
 from pathlib import Path
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from git import Repo
 
 # Constants (value never changes)
@@ -16,17 +16,40 @@ def convert_date(timestamp):
     formated_date = d.strftime('%Y%m%d')
     return formated_date
 
+def fileInRepo(repo,path_to_file):
+    rsub = repo.head.commit.tree
+    for (_path, _stage), entry in repo.index.entries.items():
+        #print(f"path: {_path}, stage: {_stage}")
+        if _path == path_to_file.replace("\\","/"):
+            return True
+    return False
+
+    # '''
+    # repo is a gitPython Repo object
+    # path_to_file is the full path to the file from the repository root
+    # returns true if file is found in the repo at the specified path, false otherwise
+    # '''
+    # pathdir = os.path.dirname(path_to_file)
+    # print(f"pathdir: {pathdir}")
+
+    # # Build up reference to desired repo path
+    # rsub = repo.head.commit.tree
+    # for path_element in pathdir.split(os.path.sep):
+    #     rsub = rsub[path_element]
+    # print(f"rsub: {rsub}")
+    # return(path_to_file in rsub)
+
 def git_push(path_to_repo, files, commit_msg):
     try:
         repo = Repo(path_to_repo)
-        for (_path, _stage), entry in index.entries.items():
-          print(f"path: {_path}, stage: {_stage}")  
-
-        # repo.git.add(update=True)
-        # repo.index.commit(commit_msg)
-        # origin = repo.remote(name='origin')
-        # origin.push()
-        # repo.index.update()
+        # steps: add new or add update, commit all changes, push
+        for file in files:
+            repo.git.add(file, update=True)
+            print(f"added/updated file: {file}")
+        repo.index.commit(commit_msg)
+        origin = repo.remote(name='origin')
+        origin.push()
+        repo.index.update()
     except:
         print('Some error occured while pushing the code')    
 
@@ -35,11 +58,11 @@ def move_files(entry, myPath):
     if Path(entry).suffix.lower() in JAVA_EXT:
         # unpack works but need to get all the files unpacked!!
         srcPath = f"{Path(entry).parent}\\{Path(entry).stem}"
-        destPath = f"{myPath}\\{PATH_JAVA}\\{Path(entry).stem}\\"
+        destPath = f"{myPath}\\{PATH_JAVA}\\{Path(entry).stem}"
         
         shutil.unpack_archive(Path(entry).as_posix(), srcPath)
         for file in os.listdir(srcPath):
-            copied_file = shutil.copy2(file, destPath)
+            copied_file = shutil.move(f"{srcPath}\{file}", f"{destPath}\{file}")
             print(copied_file)
             add_files.append(copied_file)
         print(f"Moved {srcPath} to {destPath}")
@@ -60,6 +83,8 @@ if __name__ == '__main__':
     head2, tail2 = os.path.split(head1)
     fileDownload = f"{head2}\\{PATH_DOWNLOADS}"
 
+    # if looking back in time
+    # today = (date.today() + timedelta(days=-2)).strftime('%Y%m%d')
     today = date.today().strftime('%Y%m%d')
     repo = Repo(curPath)
     print(f"{repo}")
@@ -77,16 +102,9 @@ if __name__ == '__main__':
             # if user wants to move them. move them to current directory
             if val.lower() == 'yes' or val.lower() == 'y':
                 add_files = move_files(entry, curPath)  
-            #     if Path(entry).suffix.lower() in BLOCKLY_EXT #== ".blk" or Path(entry).suffix.lower() == ".png": 
-            #         newPath = f"{curPath}\\{PATH_BLOCKLY}\\{Path(entry).name}"
-            #         os.rename(entry, newPath)
-            #         print(f"Moved {Path(entry).name} to Blockly directory")
-            #         add_files.append(newPath)
-            #         #repo.index.add([newPath])
+        
     if len(add_files) > 0:
         cmt = input(f"Enter commit message for git: ")
-        for item in add_files:
-            print(item)
-        git_push(curPath,add_files, cmt)
+        git_push(curPath, add_files, cmt)
     else:
         print(f"no files moved into git repo")
