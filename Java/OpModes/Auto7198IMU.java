@@ -30,6 +30,7 @@
 package OpModes;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import java.util.Locale;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -44,6 +45,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+
+import OpModes.utilities.*;
 
 import java.util.Locale;
 
@@ -88,7 +91,7 @@ public class Auto7198IMU extends LinearOpMode
          * Initialize the standard drive system variables.
          * The init() method of the hardware class does most of the work here
          */
-        robot.init(hardwareMap);
+        robot.init(telemetry, hardwareMap);
 
         // Set up the parameters with which we will use our IMU. Note that integration
         // algorithm here just reports accelerations to the logcat log; it doesn't actually
@@ -137,7 +140,7 @@ public class Auto7198IMU extends LinearOpMode
 
             // code tests robot can turn on around for 3 sec
             resetAngle();
-            /*
+            /* this code would make a good test case, get it into it's own program
             robot.setSimplePower(0.25, -0.25);
             telemetry.update();
             sleep(3000);
@@ -145,14 +148,27 @@ public class Auto7198IMU extends LinearOpMode
             telemetry.update();
             */
             
-            // code tests robot can turn 90 deg before stopping
+            /*
+            // code tests robot can turn 90 deg (clockwise) before stopping
             rotate(90, 0.25);
             getAngle();
             telemetry.update();
             sleep(3000);
 
+            // code tests robot can turn -90 deg (counter clockwise) before stopping
             rotate(-90, 0.25);
             getAngle();
+            telemetry.update();
+            sleep(3000);
+            */
+            
+            sleep(3000);
+            robot.controlMecanum("forward", 12, 0.25);
+            telemetry.update();
+            sleep(3000);
+
+            sleep(3000);
+            robot.controlMecanum("right", 12, 0.25);
             telemetry.update();
             sleep(3000);
         }
@@ -321,24 +337,26 @@ public class Auto7198IMU extends LinearOpMode
                                     + gravity.zAccel*gravity.zAccel));
                     }
                 });
-        telemetry.addLine()
+        /*telemetry.addLine()
             .addData("lastAngles", new Func<String>() {
                 @Override public String value() {
                     return lastAngles.toString();
                     }
                 });
+        */
         telemetry.addLine()
             .addData("globalAngle", new Func<String>() {
                 @Override public String value() {
                     return String.format(Locale.getDefault(), "%.3f", globalAngle);
                     }
                 });
-        telemetry.addLine()
+        /*telemetry.addLine()
             .addData("rotate_status", new Func<String>() {
                 @Override public String value() {
                     return String.format(Locale.getDefault(), "%b", rotate_status);
                     }
                 });
+        */
         telemetry.addLine()
             .addData("robot", new Func<String>() {
                 @Override public String value() {
