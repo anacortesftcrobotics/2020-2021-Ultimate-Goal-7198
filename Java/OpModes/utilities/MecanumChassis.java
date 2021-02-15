@@ -1,5 +1,7 @@
 package OpModes.utilities;
+
 import com.qualcomm.robotcore.hardware.Blinker;
+
 import com.qualcomm.robotcore.hardware.Blinker;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -12,13 +14,16 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class MecanumChassis {
     private Blinker control_Hub;
-    private Gyroscope imu;
     private DcMotor leftback;
     private DcMotor leftfront;
     private DcMotor rightback;
     private DcMotor rightfront;
     private double MECANUM_CIRCUMFERENCE = 12.4;
     private double TICKS_PER_INCH = 62;
+    public  double robotAngle = 0;
+    
+    // Define robot reference
+    UGRobot robot;
     
     // local OpMode members.
     HardwareMap hwMap           =  null;
@@ -26,8 +31,10 @@ public class MecanumChassis {
     Telemetry telemetry;
     
     // Constructor
-    public MecanumChassis() {
-
+    public MecanumChassis(UGRobot _robot) {
+        // Set robot reference
+        robot = _robot;
+        init();
     }
 
     private void resetEncoders() {
@@ -45,21 +52,24 @@ public class MecanumChassis {
     }
 
     // Initialize standard Hardware interfaces
-    public void init(Telemetry tIn, HardwareMap ahwMap) {
+    public void init() { //Telemetry tIn, HardwareMap ahwMap) {
         // Save reference to Hardware map
-        hwMap = ahwMap;
+        //hwMap = ahwMap;
+        hwMap = robot.hardwareMap;
         // Create the object specific variables from the OpMode
-        telemetry = tIn;
+        //telemetry = tIn;
+        telemetry = robot.telemetry;
 
         // Define and Initialize Motors
         leftfront = hwMap.get(DcMotor.class, "leftfront");
-        rightfront = hwMap.get(DcMotor.class, "leftback");
-        leftback = hwMap.get(DcMotor.class, "rightfront");
+        rightfront = hwMap.get(DcMotor.class, "rightfront");
+        leftback = hwMap.get(DcMotor.class, "leftback");
         rightback = hwMap.get(DcMotor.class, "rightback");
 
         // Reverses the two left motors
-        leftfront.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        leftback.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+        
+        leftfront.setDirection(DcMotor.Direction.REVERSE);
+        leftback.setDirection(DcMotor.Direction.REVERSE); 
         rightfront.setDirection(DcMotor.Direction.FORWARD);
         rightback.setDirection(DcMotor.Direction.FORWARD);
         
@@ -76,8 +86,6 @@ public class MecanumChassis {
         rightfront.setPower(0);
         leftback.setPower(0);
         rightback.setPower(0);
-        
-
     }
     
     // Returns a string with all of the motor powers for telemetry
@@ -88,10 +96,6 @@ public class MecanumChassis {
             rightfront.getPower(), 
             leftback.getPower(), 
             rightback.getPower());
-        // return "leftfront: " + leftfront.getPower() +
-        //       "\nrightfront: " + rightfront.getPower() +
-        //       "\nleftback: " + leftback.getPower() +
-        //       "\nrightback: " + rightback.getPower();
     }
     
     // Sets the power on the motors directly based on a left and right value
@@ -100,7 +104,6 @@ public class MecanumChassis {
         rightfront.setPower(right);
         leftback.setPower(left);
         rightback.setPower(right);
-        //return "Left: " + left + " Right: " + right;
     }
     
     // Takes a type of move and a value for that move, and drives the robot to meet that value
@@ -124,6 +127,17 @@ public class MecanumChassis {
                 break;
             case "right":
                 ticks = (int) Math.floor(distance * TICKS_PER_INCH);
+                leftfront.setTargetPosition(ticks);
+                //frontRight.setTargetPosition(distance);
+                //rearLeft.setTargetPosition(distance);
+                //rearRight.setTargetPosition(-distance);
+                leftfront.setPower(power);
+                rightfront.setPower(-power);
+                leftback.setPower(-power);
+                rightback.setPower(power);
+                break;
+            case "left":
+                ticks = (int) Math.floor(distance * TICKS_PER_INCH);
                 leftfront.setTargetPosition(-ticks);
                 //frontRight.setTargetPosition(distance);
                 //rearLeft.setTargetPosition(distance);
@@ -133,6 +147,11 @@ public class MecanumChassis {
                 leftback.setPower(power);
                 rightback.setPower(-power);
                 break;
+            case "diagonalright":
+                ticks = (int) Math.floor(distance * TICKS_PER_INCH);
+                leftfront.setTargetPosition(ticks);
+                leftfront.setPower(power);
+                rightback.setPower(power);
         }
 
         // Add telemetry specific to the current movement
@@ -146,5 +165,65 @@ public class MecanumChassis {
         telemetry.update();
         setSimplePower(0, 0);
     }
+    
+    //----------------------------------------------------------------------------------------------
+    // Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
+    // @param degrees Degrees to turn, + is left - is right
+    //----------------------------------------------------------------------------------------------
+
+    /*
+    public void rotate(int degrees, double power)
+    {
+        double  leftPower, rightPower;
+
+        // restart imu movement tracking.
+        resetAngle();
+
+        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
+        // clockwise (right).
+
+        if (degrees < 0) // Z axis postive degrees is counter clockwise
+        {   // turn counter clockwise.
+            leftPower = power;
+            rightPower = -power;
+        }
+        else if (degrees > 0) // Z axis negative degrees is clockwise
+        {   // turn clockwise.
+            leftPower = -power;
+            rightPower = power;
+        }
+        else return;
+
+        robot.setSimplePower(leftPower, rightPower);
+        rotate_status = true;
+        // rotate until turn is completed.
+        if (degrees < 0)
+        {
+            // On counter clockwise turn we have to get off zero first.
+            //while (opModeIsActive() && getAngle() == 0) { telemetry.update(); }
+            while (opModeIsActive() && getAngle() > degrees) { telemetry.update(); }
+        }
+        else 
+        {   // clockwise turn.
+            while (opModeIsActive() && getAngle() < degrees) { telemetry.update(); }
+        }
+        
+        rotate_status = false;
+        
+        // turn the motors off.
+        // rightMotor.setPower(0);
+        // leftMotor.setPower(0);
+        robot.setSimplePower(0.0, 0.0);
+
+        telemetry.update(); 
+        // wait for rotation to stop.
+        //sleep(1000);
+        telemetry.update(); 
+        // reset angle tracking on new heading.
+        resetAngle();
+        
+        telemetry.update(); 
+    }
+    */
     
 }
