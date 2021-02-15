@@ -1,31 +1,4 @@
-/* Copyright (c) 2017 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+/* code taking from FIRST example IMU */
 
 package OpModes;
 
@@ -47,40 +20,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import OpModes.utilities.*;
-
 import java.util.Locale;
 
-/**
- * {@link SensorBNO055IMU} gives a short demo on how to use the BNO055 Inertial Motion Unit (IMU) from AdaFruit.
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
- *
- * @see <a href="http://www.adafruit.com/products/2472">Adafruit IMU</a>
- */
 @Autonomous(name = "Auto7198IMU", group = "Sensor")
 
 public class Auto7198IMU extends LinearOpMode
     {
-    //----------------------------------------------------------------------------------------------
-    // State
-    //----------------------------------------------------------------------------------------------
-
-    MecanumChassis robot   = new MecanumChassis();   // Use team robot hardware
+    // Define robot object
+    private UGRobot robot;
     
-    // The IMU sensor object
-    BNO055IMU imu;
-
-    // State used for updating telemetry
-    Orientation angles;
-    Acceleration gravity;
-
-    Orientation             lastAngles = new Orientation();
-    double                  globalAngle, power = .30, correction;
-    
-    boolean rotate_status = false;
-
-        
     //----------------------------------------------------------------------------------------------
     // Main logic
     //----------------------------------------------------------------------------------------------
@@ -91,37 +39,12 @@ public class Auto7198IMU extends LinearOpMode
          * Initialize the standard drive system variables.
          * The init() method of the hardware class does most of the work here
          */
-        robot.init(telemetry, hardwareMap);
-
-        // Set up the parameters with which we will use our IMU. Note that integration
-        // algorithm here just reports accelerations to the logcat log; it doesn't actually
-        // provide positional information.
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
-        parameters.loggingEnabled      = true;
-        parameters.loggingTag          = "IMU";
-        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
-
-        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-        // and named "imu".
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu.initialize(parameters);
-
-
-        // make sure the imu gyro is calibrated before continuing.
-        while (!isStopRequested() && !imu.isGyroCalibrated())
-        {
-            sleep(50);
-            idle();
-        }
+        robot = new UGRobot(telemetry, hardwareMap, this);
 
         telemetry.addData("Mode", "waiting for start");
-        telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());
+        telemetry.addData("imu calib status", robot.imu.getCalibrationStatus());
         telemetry.update();
-
+        
         // wait for start button.
 
         // Set up our telemetry dashboard
@@ -131,151 +54,68 @@ public class Auto7198IMU extends LinearOpMode
         waitForStart();
 
         // Start the logging of measured acceleration
-        imu.startAccelerationIntegration(new Position(), new Velocity(), 1000);
-
+        //robot.imu.startIMUTracking(); // Liam says this isn't used/needed
+        
         // Loop and update the dashboard
         while (opModeIsActive()) {
             telemetry.update();
             sleep(3000);
 
+            robot.imu.resetAngle();
             // code tests robot can turn on around for 3 sec
-            resetAngle();
-            /* this code would make a good test case, get it into it's own program
-            robot.setSimplePower(0.25, -0.25);
-            telemetry.update();
-            sleep(3000);
-            robot.setSimplePower(0, 0);
-            telemetry.update();
-            */
             
             /*
-            // code tests robot can turn 90 deg (clockwise) before stopping
-            rotate(90, 0.25);
+            // this code would make a good test case, get it into it's own program
+            // simple spin
+            robot.chassis.setSimplePower(0.25, -0.25);
+            telemetry.update();
+            sleep(3000);
+            robot.chassis.setSimplePower(0, 0);
+            telemetry.update();
+            
+            // move forward simple power
+            robot.chassis.setSimplePower(0.25, 0.25);
+            telemetry.update();
+            sleep(3000);
+            robot.chassis.setSimplePower(0, 0);
+            telemetry.update();
+            */
+            /*
+            // code tests robot can turn 90 deg (counter clockwise) before stopping
+            robot.chassis.rotate(90, 0.25);
             getAngle();
             telemetry.update();
             sleep(3000);
 
-            // code tests robot can turn -90 deg (counter clockwise) before stopping
-            rotate(-90, 0.25);
+            // code tests robot can turn -90 deg (clockwise) before stopping
+            robot.chassis.rotate(-90, 0.25);
             getAngle();
             telemetry.update();
             sleep(3000);
             */
             
-            sleep(3000);
-            robot.controlMecanum("forward", 12, 0.25);
+            robot.chassis.controlMecanum("diagonalright", 12, 0.25);
             telemetry.update();
             sleep(3000);
-
+            
+            
             sleep(3000);
-            robot.controlMecanum("right", 12, 0.25);
+            robot.chassis.controlMecanum("forward", 12, 0.25);
+            telemetry.update();
+            
+            sleep(3000);
+            robot.chassis.controlMecanum("right", 12, 0.25);
+            telemetry.update();
+            
+            sleep(3000);
+            robot.chassis.controlMecanum("left", 12, 0.25);
             telemetry.update();
             sleep(3000);
+            
+            
         }
     }
 
-    //----------------------------------------------------------------------------------------------
-    // Reset cumulative angle tracking to zero
-    //----------------------------------------------------------------------------------------------
-
-    private void resetAngle()
-    {
-        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        globalAngle = 0.0;
-    }
-
-    //----------------------------------------------------------------------------------------------
-    // Get current cumulative angle rotation from last reset.
-    // @return Angle in degrees. + = left, - = right.
-    //----------------------------------------------------------------------------------------------
-
-    private double getAngle()
-    {
-        // We experimentally determined the Z axis is the axis we want to use for heading angle.
-        // We have to process the angle because the imu works in euler angles so the Z axis is
-        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
-        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
-
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
-
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
-
-        globalAngle += deltaAngle;
-
-        lastAngles = angles;
-
-        return globalAngle;
-    }
-    
-    //----------------------------------------------------------------------------------------------
-    // Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
-    // @param degrees Degrees to turn, + is left - is right
-    //----------------------------------------------------------------------------------------------
-
-    private void rotate(int degrees, double power)
-    {
-        double  leftPower, rightPower;
-
-        // restart imu movement tracking.
-        resetAngle();
-
-        // getAngle() returns + when rotating counter clockwise (left) and - when rotating
-        // clockwise (right).
-
-        if (degrees < 0)
-        {   // turn counter clockwise.
-            leftPower = power;
-            rightPower = -power;
-        }
-        else if (degrees > 0)
-        {   // turn clockwise.
-            leftPower = -power;
-            rightPower = power;
-        }
-        else return;
-
-        // set power to rotate.
-        // leftMotor.setPower(leftPower);
-        // rightMotor.setPower(rightPower);
-
-        robot.setSimplePower(leftPower, rightPower);
-        rotate_status = true;
-        // rotate until turn is completed.
-        if (degrees < 0)
-        {
-            // On counter clockwise turn we have to get off zero first.
-            //while (opModeIsActive() && getAngle() == 0) { telemetry.update(); }
-            while (opModeIsActive() && getAngle() > degrees) { telemetry.update(); }
-        }
-        else 
-        {   // clockwise turn.
-            while (opModeIsActive() && getAngle() < degrees) { telemetry.update(); }
-        }
-        
-        rotate_status = false;
-        
-        // turn the motors off.
-        // rightMotor.setPower(0);
-        // leftMotor.setPower(0);
-        robot.setSimplePower(0.0, 0.0);
-
-        telemetry.update(); 
-        // wait for rotation to stop.
-        sleep(1000);
-        telemetry.update(); 
-        // reset angle tracking on new heading.
-        resetAngle();
-        
-        telemetry.update(); 
-    }
-
-    
     //----------------------------------------------------------------------------------------------
     // Telemetry Configuration
     //----------------------------------------------------------------------------------------------
@@ -284,6 +124,7 @@ public class Auto7198IMU extends LinearOpMode
 
         // At the beginning of each telemetry update, grab a bunch of data
         // from the IMU that we will then display in separate lines.
+        /*
         telemetry.addAction(new Runnable() { @Override public void run()
                 {
                 // Acquiring the angles is relatively expensive; we don't want
@@ -293,7 +134,7 @@ public class Auto7198IMU extends LinearOpMode
                 gravity  = imu.getGravity();
                 }
             });
-
+        
         telemetry.addLine()
             .addData("status", new Func<String>() {
                 @Override public String value() {
@@ -337,20 +178,20 @@ public class Auto7198IMU extends LinearOpMode
                                     + gravity.zAccel*gravity.zAccel));
                     }
                 });
-        /*telemetry.addLine()
+        telemetry.addLine()
             .addData("lastAngles", new Func<String>() {
                 @Override public String value() {
                     return lastAngles.toString();
                     }
                 });
-        */
+        
         telemetry.addLine()
             .addData("globalAngle", new Func<String>() {
                 @Override public String value() {
                     return String.format(Locale.getDefault(), "%.3f", globalAngle);
                     }
                 });
-        /*telemetry.addLine()
+        telemetry.addLine()
             .addData("rotate_status", new Func<String>() {
                 @Override public String value() {
                     return String.format(Locale.getDefault(), "%b", rotate_status);
@@ -369,7 +210,7 @@ public class Auto7198IMU extends LinearOpMode
     //----------------------------------------------------------------------------------------------
     // Formatting
     //----------------------------------------------------------------------------------------------
-
+    /*
     String formatAngle(AngleUnit angleUnit, double angle) {
         return formatDegrees(AngleUnit.DEGREES.fromUnit(angleUnit, angle));
     }
@@ -377,4 +218,5 @@ public class Auto7198IMU extends LinearOpMode
     String formatDegrees(double degrees){
         return String.format(Locale.getDefault(), "%.1f", AngleUnit.DEGREES.normalize(degrees));
     }
+    */
 }
