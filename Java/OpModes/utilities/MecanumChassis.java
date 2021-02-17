@@ -171,13 +171,13 @@ public class MecanumChassis {
     // @param degrees Degrees to turn, + is left - is right
     //----------------------------------------------------------------------------------------------
 
-    /*
+    
     public void rotate(int degrees, double power)
     {
         double  leftPower, rightPower;
 
         // restart imu movement tracking.
-        resetAngle();
+        robot.imu.resetAngle();
 
         // getAngle() returns + when rotating counter clockwise (left) and - when rotating
         // clockwise (right).
@@ -194,36 +194,36 @@ public class MecanumChassis {
         }
         else return;
 
-        robot.setSimplePower(leftPower, rightPower);
-        rotate_status = true;
+        setSimplePower(leftPower, rightPower);
+        robot.imu.rotate_status = true;
         // rotate until turn is completed.
         if (degrees < 0)
         {
             // On counter clockwise turn we have to get off zero first.
             //while (opModeIsActive() && getAngle() == 0) { telemetry.update(); }
-            while (opModeIsActive() && getAngle() > degrees) { telemetry.update(); }
+            while (robot.linearOpMode.opModeIsActive() && robot.imu.getAngle() > degrees) { telemetry.update(); }
         }
         else 
         {   // clockwise turn.
-            while (opModeIsActive() && getAngle() < degrees) { telemetry.update(); }
+            while (robot.linearOpMode.opModeIsActive() && robot.imu.getAngle() < degrees) { telemetry.update(); }
         }
         
-        rotate_status = false;
+        robot.imu.rotate_status = false;
         
         // turn the motors off.
         // rightMotor.setPower(0);
         // leftMotor.setPower(0);
-        robot.setSimplePower(0.0, 0.0);
+        setSimplePower(0.0, 0.0);
 
         telemetry.update(); 
         // wait for rotation to stop.
         //sleep(1000);
         telemetry.update(); 
         // reset angle tracking on new heading.
-        resetAngle();
+        robot.imu.resetAngle();
         
         telemetry.update(); 
     }
-    */
+    
     
 }

@@ -61,7 +61,6 @@ public class Auto7198IMU extends LinearOpMode
             telemetry.update();
             sleep(3000);
 
-            robot.imu.resetAngle();
             // code tests robot can turn on around for 3 sec
             
             /*
@@ -80,19 +79,19 @@ public class Auto7198IMU extends LinearOpMode
             robot.chassis.setSimplePower(0, 0);
             telemetry.update();
             */
-            /*
+            
             // code tests robot can turn 90 deg (counter clockwise) before stopping
             robot.chassis.rotate(90, 0.25);
-            getAngle();
+            robot.imu.getAngle();
             telemetry.update();
             sleep(3000);
 
             // code tests robot can turn -90 deg (clockwise) before stopping
             robot.chassis.rotate(-90, 0.25);
-            getAngle();
+            robot.imu.getAngle();
             telemetry.update();
             sleep(3000);
-            */
+            
             
             robot.chassis.controlMecanum("diagonalright", 12, 0.25);
             telemetry.update();
@@ -104,14 +103,14 @@ public class Auto7198IMU extends LinearOpMode
             telemetry.update();
             
             sleep(3000);
+            robot.chassis.controlMecanum("left", 12, 0.25);
+            telemetry.update();
+    
+            sleep(3000);
             robot.chassis.controlMecanum("right", 12, 0.25);
             telemetry.update();
             
             sleep(3000);
-            robot.chassis.controlMecanum("left", 12, 0.25);
-            telemetry.update();
-            sleep(3000);
-            
             
         }
     }

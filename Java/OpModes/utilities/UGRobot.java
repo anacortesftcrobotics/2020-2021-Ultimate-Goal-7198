@@ -14,6 +14,8 @@ public class UGRobot {
     // Define the objects for the other Utilities
     public MecanumChassis chassis;
     public ControlHubIMU imu;
+    public WandaVision vision;
+    
     public double robotAngle = 0.0;
 
     // Define other hardware devices that don't have separate Utility classes
@@ -31,5 +33,7 @@ public class UGRobot {
         // Construct the field objects
         chassis = new MecanumChassis(this);
         imu = new ControlHubIMU(this);
+        vision = new WandaVision(this);
+        
     }
 }
