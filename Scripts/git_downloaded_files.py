@@ -10,6 +10,7 @@ PATH_BLOCKLY = "Blockly"
 BLOCKLY_EXT = [".blk",".png"]
 PATH_JAVA = "Java"
 JAVA_EXT = [".zip"]
+ALL_EXT = BLOCKLY_EXT + JAVA_EXT
 
 def convert_date(timestamp):
     d = datetime.utcfromtimestamp(timestamp)
@@ -61,11 +62,12 @@ def move_files(entry, myPath):
         destPath = f"{myPath}\\{PATH_JAVA}\\{Path(entry).stem}"
         
         shutil.unpack_archive(Path(entry).as_posix(), srcPath)
-        for file in os.listdir(srcPath):
-            copied_file = shutil.move(f"{srcPath}\{file}", f"{destPath}\{file}")
-            print(copied_file)
-            add_files.append(copied_file)
-        print(f"Moved {srcPath} to {destPath}")
+        for subdir, dirs, files in os.walk(srcPath):
+            for filename in files:
+                filepath = subdir + os.sep + filename
+                print(f"Moved file: {filepath} to {destPath}{filepath.replace(srcPath,'')}")
+                copied_file = shutil.move(f"{filepath}", f"{destPath}{filepath.replace(srcPath,'')}")
+                add_files.append(copied_file)
         return add_files
     elif Path(entry).suffix.lower() in BLOCKLY_EXT:
         targetPath = f"{myPath}\\{PATH_BLOCKLY}"
@@ -93,16 +95,17 @@ if __name__ == '__main__':
     add_files = []
 
     for entry in entries:
-        info = entry.stat()
-        filemtime = convert_date(info.st_mtime)
-        # only look at today's files
-        if (filemtime >= today):
-            val = input(f"filename: {Path(entry).name}, modtime: {filemtime}, Do you wish to save to git?(Y/N): ")
-            print(val) 
-            # if user wants to move them. move them to current directory
-            if val.lower() == 'yes' or val.lower() == 'y':
-                add_files = move_files(entry, curPath)  
-        
+        if Path(entry).suffix.lower() in ALL_EXT:
+            info = entry.stat()
+            filemtime = convert_date(info.st_mtime)
+            # only look at today's files
+            if (filemtime >= today):
+                val = input(f"filename: {Path(entry).name}, modtime: {filemtime}, Do you wish to save to git?(Y/N): ")
+                print(val) 
+                # if user wants to move them. move them to current directory
+                if val.lower() == 'yes' or val.lower() == 'y':
+                    add_files = move_files(entry, curPath)  
+            
     if len(add_files) > 0:
         cmt = input(f"Enter commit message for git: ")
         git_push(curPath, add_files, cmt)
